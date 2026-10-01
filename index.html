@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>STARK Sample Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;font-size:14px;background:#f5f2ed;color:#1a1814;height:100vh;overflow:hidden}
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:#1a1814;display:flex;align-items:center;justify-content:center;z-index:1000}
+.login-box{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:40px;width:360px}
+.login-logo{font-size:28px;font-weight:700;letter-spacing:.12em;color:#fff;margin-bottom:4px}
+.login-sub{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#7a7670;margin-bottom:28px}
+.login-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#b0ada6;margin-bottom:6px}
+.login-input{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:11px 14px;font-size:14px;color:#fff;outline:none;margin-bottom:14px;font-family:Arial,sans-serif}
+.login-input:focus{border-color:#c49a3c}
+.login-btn{width:100%;background:#c49a3c;border:none;border-radius:6px;padding:12px;font-size:14px;font-weight:700;color:#1a1814;cursor:pointer;font-family:Arial,sans-serif}
+.login-error{color:#ff6b6b;font-size:13px;margin-top:10px;min-height:20px}
+/* LAYOUT */
+#app{display:none;height:100vh}
+.layout{display:flex;height:100vh}
+.sidebar{width:215px;background:#1a1814;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-logo{padding:22px 18px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sidebar-logo .wm{font-size:20px;font-weight:700;letter-spacing:.12em;color:#fff}
+.sidebar-logo .sub{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#7a7670;margin-top:2px}
+.nav-section{padding:12px 10px 4px}
+.nav-label{font-size:9px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#7a7670;padding:0 8px;margin-bottom:3px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:5px;cursor:pointer;color:#b0ada6;font-size:13px;font-weight:500}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-item.active{background:rgba(196,154,60,.18);color:#c49a3c}
+.nav-badge{margin-left:auto;background:#b03030;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+.sidebar-footer{margin-top:auto;padding:12px 10px;border-top:1px solid rgba(255,255,255,.08)}
+.user-chip{display:flex;align-items:center;gap:10px;padding:8px}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:#c49a3c;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#1a1814;flex-shrink:0}
+.user-name{font-size:12px;font-weight:600;color:#fff}
+.user-role-lbl{font-size:10px;color:#7a7670}
+.logout-btn{width:100%;background:none;border:1px solid rgba(255,255,255,.1);border-radius:5px;padding:6px;font-size:11px;color:#7a7670;cursor:pointer;margin-top:6px;font-family:Arial,sans-serif}
+/* MAIN */
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.topbar{height:50px;background:#fff;border-bottom:1px solid #e8e4de;display:flex;align-items:center;padding:0 22px;flex-shrink:0}
+.topbar-title{font-size:16px;font-weight:700}
+.topbar-right{margin-left:auto}
+.content{flex:1;overflow-y:auto;padding:22px}
+.screen{display:none}.screen.active{display:block}
+/* CARDS */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi{background:#fff;border:1px solid #e8e4de;border-radius:8px;padding:16px 18px}
+.kpi-val{font-size:32px;font-weight:700;color:#1a1814}
+.kpi-val.red{color:#b03030}.kpi-val.amber{color:#b06020}.kpi-val.green-val{color:#3a6b4a}
+.kpi-label{font-size:11px;font-weight:500;color:#7a7670;text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+.card{background:#fff;border:1px solid #e8e4de;border-radius:8px;overflow:hidden;margin-bottom:14px}
+.card-header{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid #e8e4de}
+.card-title{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#3d3a35}
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#7a7670;padding:8px 14px;border-bottom:1px solid #e8e4de;background:#f5f2ed}
+tbody td{padding:9px 14px;border-bottom:1px solid #e8e4de;font-size:13px;color:#3d3a35;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#f5f2ed}
+.mono{font-family:monospace;font-weight:600;font-size:13px}
+/* BADGES */
+.badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.badge-out{background:#fef0dd;color:#b06020}.badge-in{background:#dff0e6;color:#3a6b4a}
+.badge-overdue{background:#fce8e8;color:#b03030}.badge-loan{background:#e8f0fb;color:#2c5282}
+.badge-rug{background:#f0e4c4;color:#7a5a10}.badge-brdlm{background:#edeae4;color:#3d3a35}
+.badge-admin{background:#fce8e8;color:#b03030}.badge-data{background:#e8f0fb;color:#2c5282}
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:5px;font-size:13px;font-weight:600;cursor:pointer;border:none;font-family:Arial,sans-serif}
+.btn-primary{background:#1a1814;color:#fff}.btn-gold{background:#c49a3c;color:#1a1814}
+.btn-ghost{background:transparent;border:1px solid #e8e4de;color:#3d3a35}
+.btn-danger{background:#b03030;color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#7a7670}
+.form-input,.form-select{background:#fff;border:1px solid #e8e4de;border-radius:5px;padding:8px 11px;font-size:13px;color:#1a1814;outline:none;width:100%;font-family:Arial,sans-serif}
+.form-input:focus,.form-select:focus{border-color:#c49a3c}
+.form-input[readonly]{background:#f5f2ed;color:#7a7670}
+.form-section-title{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#7a7670;border-bottom:1px solid #e8e4de;padding-bottom:8px;margin-bottom:12px;margin-top:4px}
+/* SCAN */
+.scan-hero{background:#1a1814;border-radius:10px;padding:22px;margin-bottom:14px;display:flex;align-items:center;gap:16px}
+.scan-icon{width:46px;height:46px;background:rgba(196,154,60,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px;color:#c49a3c}
+.scan-input{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:10px 14px;font-size:17px;font-weight:600;color:#fff;letter-spacing:.06em;outline:none;font-family:monospace}
+.scan-label{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#b0ada6;margin-bottom:6px}
+.scan-hint{font-size:11px;color:#7a7670;margin-top:5px}
+/* FILTER */
+.filter-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.search-input{background:#fff;border:1px solid #e8e4de;border-radius:5px;padding:7px 11px;font-size:13px;color:#1a1814;outline:none;width:220px;font-family:Arial,sans-serif}
+.filter-select-sm{background:#fff;border:1px solid #e8e4de;border-radius:5px;padding:7px 9px;font-size:13px;color:#3d3a35;outline:none;cursor:pointer;font-family:Arial,sans-serif}
+/* DESIGN SEARCH */
+.design-search-wrap{position:relative}
+.design-search-input{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:6px;padding:9px 12px;font-size:14px;color:#fff;outline:none;font-family:Arial,sans-serif}
+.design-search-input:focus{border-color:rgba(196,154,60,.8)}
+.design-dropdown{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e8e4de;border-radius:5px;box-shadow:0 4px 16px rgba(0,0,0,.12);z-index:200;max-height:240px;overflow-y:auto;display:none}
+.design-dropdown.open{display:block}
+.design-option{padding:9px 12px;font-size:13px;cursor:pointer;color:#1a1814;border-bottom:1px solid #f0ede8}
+.design-option:last-child{border-bottom:none}
+.design-option:hover{background:#f5f2ed}
+.design-option .opt-label{font-weight:600}
+.design-option .opt-type{font-size:10px;color:#7a7670;margin-left:6px}
+/* MISC */
+.feed-item{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border-bottom:1px solid #e8e4de}
+.feed-item:last-child{border-bottom:none}
+.feed-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.feed-dot.out{background:#b06020}.feed-dot.in{background:#3a6b4a}
+.feed-main{font-size:13px;color:#1a1814}.feed-meta{font-size:11px;color:#7a7670;margin-top:1px}
+.bar-chart{padding:14px 16px 8px}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.bar-label{font-size:12px;color:#3d3a35;width:160px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:7px;background:#edeae4;border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;background:#c49a3c}
+.bar-fill.green{background:#3a6b4a}.bar-fill.blue{background:#2c5282}
+.bar-val{font-size:12px;font-weight:600;color:#3d3a35;width:24px;text-align:right}
+.queue-empty{padding:22px;text-align:center;color:#7a7670;font-size:13px}
+.toast{position:fixed;bottom:22px;right:22px;z-index:9999;background:#1a1814;color:#fff;padding:11px 18px;border-radius:8px;font-size:13px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.25);display:none;max-width:360px}
+.toast.show{display:block}.toast.success{background:#3a6b4a}.toast.error{background:#b03030}
+.loading{text-align:center;color:#7a7670;padding:20px}
+.two-col{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#e8e4de;border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">STARK</div>
+    <div class="login-sub">Sample Tracker</div>
+    <div class="login-label">Email address</div>
+    <input class="login-input" type="email" id="login-email" placeholder="you@starkcarpet.com"/>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+<div class="layout">
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="wm">STARK</div>
+      <div class="sub">Sample Tracker</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Main</div>
+      <div class="nav-item active" onclick="showScreen('dashboard',this)">Dashboard <span class="nav-badge" id="overdue-badge" style="display:none">0</span></div>
+      <div class="nav-item" onclick="showScreen('scan',this)" style="color:#e57373">Check Out Samples</div>
+      <div class="nav-item" onclick="showScreen('return',this)" style="color:#81c784">Check In Samples</div>
+      <div class="nav-item" onclick="showScreen('loans',this)">Loan History</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Sample Database</div>
+      <div class="nav-item" onclick="showScreen('inventory',this)">Showroom Inventory</div>
+      <div class="nav-item" id="nav-add-sample" onclick="showScreen('addsample',this)">Add / Remove Samples</div>
+      <div class="nav-item" onclick="showScreen('catalog',this)">Sample Catalog</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-label">Insights</div>
+      <div class="nav-item" onclick="showScreen('analytics',this)">Analytics</div>
+    </div>
+    <div class="nav-section" id="nav-admin" style="display:none">
+      <div class="nav-label">Admin</div>
+      <div class="nav-item" onclick="showScreen('locations',this)">Locations</div>
+      <div class="nav-item" onclick="showScreen('users',this)">Users &amp; Roles</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div>
+          <div class="user-name" id="user-name">--</div>
+          <div class="user-role-lbl" id="user-role-label">--</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Sign out</button>
+    </div>
+  </nav>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <div class="topbar-right">
+        <button class="btn btn-gold" onclick="showScreen('scan',null)">Check Out</button>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="screen active" id="screen-dashboard">
+        <div class="kpi-row">
+          <div class="kpi"><div class="kpi-val" id="kpi-out">--</div><div class="kpi-label">Total Out</div></div>
+          <div class="kpi"><div class="kpi-val red" id="kpi-overdue">--</div><div class="kpi-label">Overdue</div></div>
+          <div class="kpi"><div class="kpi-val amber" id="kpi-week">--</div><div class="kpi-label">Due This Week</div></div>
+          <div class="kpi"><div class="kpi-val green-val" id="kpi-returned">--</div><div class="kpi-label">Returned Today</div></div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Overdue Samples</div><span class="badge badge-overdue" id="overdue-count-badge">0 items</span></div>
+            <table><thead><tr><th>Barcode</th><th>AM</th><th>Account</th><th>Days Over</th><th></th></tr></thead>
+            <tbody id="overdue-tbody"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody></table>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Recent Activity</div></div>
+            <div id="activity-feed"><div class="loading">Loading...</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHECK OUT -->
+      <div class="screen" id="screen-scan">
+        <div style="max-width:700px">
+          <div class="scan-hero">
+            <div class="scan-icon">[S]</div>
+            <div style="flex:1">
+              <div class="scan-label">Scan barcode or search by Design | Color</div>
+              <div style="display:flex;gap:8px;margin-bottom:8px">
+                <input class="scan-input" type="text" id="scan-field" placeholder="Scan barcode..." style="flex:1"/>
+                <button onclick="addToQueue()" style="background:#c49a3c;border:none;border-radius:6px;padding:10px 16px;font-size:13px;font-weight:700;color:#1a1814;cursor:pointer">+ Add</button>
+              </div>
+              <div style="display:flex;gap:8px;align-items:flex-end">
+                <div class="design-search-wrap" style="flex:1">
+                  <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#b0ada6;margin-bottom:5px">Or search by Design | Color</div>
+                  <input class="design-search-input" type="text" id="co-design-search" placeholder="e.g. Moroccan Wool | Ivory..." oninput="dsSearch('co')"/>
+                  <div class="design-dropdown" id="co-design-dropdown"></div>
+                </div>
+                <div style="flex-shrink:0">
+                  <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#b0ada6;margin-bottom:5px">Size</div>
+                  <select class="form-select" id="co-size-select" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;min-width:160px" disabled onchange="dsOnSizeSelect('co')"><option value="">Select design first...</option></select>
+                </div>
+                <button id="co-ds-add-btn" onclick="dsAddToQueue('co')" style="background:#c49a3c;border:none;border-radius:6px;padding:9px 14px;font-size:13px;font-weight:700;color:#1a1814;cursor:pointer;opacity:.4;flex-shrink:0" disabled>+ Add</button>
+              </div>
+              <div class="scan-hint" style="margin-top:6px">Scan the same barcode multiple times for multiple copies</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Queue</div><span class="badge badge-loan" id="queue-count-badge">0 samples</span></div>
+            <div id="queue-empty" class="queue-empty">No samples scanned yet.</div>
+            <table id="queue-table" style="display:none"><thead><tr><th></th><th>Barcode</th><th>Design | Color</th><th>Size</th><th>Status</th><th></th></tr></thead><tbody id="queue-tbody"></tbody></table>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Loan Details</div></div>
+            <div style="padding:16px 18px">
+              <div style="display:flex;gap:8px;margin-bottom:14px">
+                <button class="btn btn-primary" id="type-client" onclick="setLoanType('client_loan')">Client Loan</button>
+                <button class="btn btn-ghost" id="type-inter" onclick="setLoanType('inter_location')">Inter-Location</button>
+              </div>
+              <div id="client-loan-fields">
+                <div class="form-grid" style="margin-bottom:14px">
+                  <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="co-date"/></div>
+                  <div class="form-group"><label class="form-label">Expected Return</label><input class="form-input" type="date" id="co-return"/></div>
+                  <div class="form-group"><label class="form-label">Account Manager</label><select class="form-select" id="co-am" onchange="loadAccounts()"><option value="">Select AM...</option></select></div>
+                  <div class="form-group"><label class="form-label">Account</label><select class="form-select" id="co-account"><option value="">Select account...</option></select></div>
+                  <div class="form-group"><label class="form-label">Project</label><input class="form-input" type="text" id="co-project" placeholder="Project name"/></div>
+                  <div class="form-group"><label class="form-label">Sidemark</label><input class="form-input" type="text" id="co-sidemark" placeholder="e.g. Living Room"/></div>
+                  <div class="form-group"><label class="form-label">How Delivered</label><select class="form-select" id="co-delivery"><option value="">Select...</option></select></div>
+                  <div class="form-group"><label class="form-label">Checked Out By</label><input class="form-input" type="text" id="co-by" readonly/></div>
+                  <div class="form-group full"><label class="form-label">Notes</label><input class="form-input" type="text" id="co-notes" placeholder="Optional..."/></div>
+                </div>
+              </div>
+              <div id="inter-location-fields" style="display:none">
+                <div class="form-grid" style="margin-bottom:14px">
+                  <div class="form-group"><label class="form-label">Date</label><input class="form-input" type="date" id="il-date"/></div>
+                  <div class="form-group"><label class="form-label">Expected Arrival</label><input class="form-input" type="date" id="il-return"/></div>
+                  <div class="form-group"><label class="form-label">From Showroom</label><select class="form-select" id="il-origin"><option value="">Select...</option></select></div>
+                  <div class="form-group"><label class="form-label">To Showroom</label><select class="form-select" id="il-dest"><option value="">Select...</option></select></div>
+                  <div class="form-group"><label class="form-label">Transferred By</label><input class="form-input" type="text" id="il-by" readonly/></div>
+                  <div class="form-group full"><label class="form-label">Notes</label><input class="form-input" type="text" id="il-notes" placeholder="Optional..."/></div>
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:12px;color:#7a7670" id="confirm-summary">0 samples queued</span>
+                <div style="display:flex;gap:8px">
+                  <button class="btn btn-ghost" onclick="clearQueue()">Clear</button>
+                  <button class="btn btn-primary" onclick="confirmCheckout()" id="confirm-btn">Confirm Checkout</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CHECK IN -->
+      <div class="screen" id="screen-return">
+        <div style="max-width:700px">
+          <div class="scan-hero">
+            <div class="scan-icon">[R]</div>
+            <div style="flex:1">
+              <div class="scan-label">Scan barcodes to return</div>
+              <div style="display:flex;gap:8px;margin-bottom:8px">
+                <input class="scan-input" type="text" id="return-field" placeholder="Scan barcode..." style="flex:1"/>
+                <button onclick="addToReturnQueue()" style="background:#c49a3c;border:none;border-radius:6px;padding:10px 16px;font-size:13px;font-weight:700;color:#1a1814;cursor:pointer">+ Add</button>
+              </div>
+              <div style="display:flex;gap:8px;align-items:flex-end">
+                <div class="design-search-wrap" style="flex:1">
+                  <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#b0ada6;margin-bottom:5px">Or search by Design | Color</div>
+                  <input class="design-search-input" type="text" id="ret-design-search" placeholder="e.g. Moroccan Wool | Ivory..." oninput="dsSearch('ret')"/>
+                  <div class="design-dropdown" id="ret-design-dropdown"></div>
+                </div>
+                <div style="flex-shrink:0">
+                  <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#b0ada6;margin-bottom:5px">Size</div>
+                  <select class="form-select" id="ret-size-select" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;min-width:160px" disabled onchange="dsOnSizeSelect('ret')"><option value="">Select design first...</option></select>
+                </div>
+                <button id="ret-ds-add-btn" onclick="dsAddToQueue('ret')" style="background:#c49a3c;border:none;border-radius:6px;padding:9px 14px;font-size:13px;font-weight:700;color:#1a1814;cursor:pointer;opacity:.4;flex-shrink:0" disabled>+ Add</button>
+              </div>
+              <div class="scan-hint" style="margin-top:6px">Scan same barcode multiple times for multiple copies</div>
+            </div>
+          </div>
+          <div class="card" id="return-queue-card" style="display:none">
+            <div class="card-header"><div class="card-title">Return Queue</div><span class="badge badge-loan" id="return-queue-badge">0 samples</span></div>
+            <table><thead><tr><th>Barcode</th><th>Design | Color</th><th>Account</th><th>Out Since</th><th>Status</th><th></th></tr></thead><tbody id="return-queue-tbody"></tbody></table>
+          </div>
+          <div class="card" id="return-confirm-card" style="display:none">
+            <div class="card-header"><div class="card-title">Confirm Returns</div></div>
+            <div style="padding:14px 16px">
+              <div class="form-group" style="margin-bottom:12px"><label class="form-label">Condition note (optional)</label><input class="form-input" type="text" id="ret-notes" placeholder="e.g. Minor wear..."/></div>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="font-size:12px;color:#7a7670" id="ret-summary">0 samples</span>
+                <div style="display:flex;gap:8px">
+                  <button class="btn btn-ghost" onclick="clearReturnQueue()">Clear</button>
+                  <button class="btn btn-primary" id="ret-confirm-btn" onclick="confirmAllReturns()">Confirm Returns</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOAN HISTORY -->
+      <div class="screen" id="screen-loans">
+        <div class="filter-bar">
+          <input class="search-input" type="text" id="loan-search" placeholder="Search barcode, account..." oninput="renderLoans()"/>
+          <select class="filter-select-sm" id="loan-status" onchange="renderLoans()"><option value="">All Statuses</option><option value="active">Active</option><option value="returned">Returned</option><option value="overdue">Overdue</option></select>
+          <select class="filter-select-sm" id="loan-am" onchange="renderLoans()"><option value="">All AMs</option></select>
+          <button class="btn btn-ghost" onclick="exportLoans()" style="margin-left:auto">Export CSV</button>
+        </div>
+        <div class="card">
+          <table><thead><tr><th>Barcode</th><th>Design | Color</th><th>Status</th><th>AM</th><th>Account</th><th>Project</th><th>Out</th><th>Exp. Return</th><th>Returned</th></tr></thead>
+          <tbody id="loans-tbody"><tr><td colspan="9" class="loading">Loading...</td></tr></tbody></table>
+        </div>
+      </div>
+
+      <!-- SAMPLE CATALOG -->
+      <div class="screen" id="screen-catalog">
+        <div class="filter-bar">
+          <input class="search-input" type="text" id="cat-search" placeholder="Search design, color, barcode..." oninput="loadCatalog(1)"/>
+          <select class="filter-select-sm" id="cat-type" onchange="loadCatalog(1)"><option value="">All Types</option><option value="RUG">RUG</option><option value="BRDLM">BRDLM</option></select>
+          <select class="filter-select-sm" id="cat-status" onchange="loadCatalog(1)"><option value="">All Statuses</option><option value="in_showroom">In Showroom</option><option value="checked_out">Checked Out</option></select>
+          <button class="btn btn-primary" onclick="showScreen('addsample',null)" style="margin-left:auto">+ Add Sample</button>
+        </div>
+        <div class="card">
+          <table><thead><tr><th>Barcode</th><th>Type</th><th>Design | Color</th><th>Size</th><th>Status</th></tr></thead>
+          <tbody id="catalog-tbody"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody></table>
+          <div id="catalog-pager"></div>
+        </div>
+      </div>
+
+      <!-- ADD / REMOVE -->
+      <div class="screen" id="screen-addsample">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Add Sample to Catalog</div><span class="badge badge-in">New entry</span></div>
+            <div style="padding:16px 18px">
+              <div class="form-grid" style="margin-bottom:14px">
+                <div class="form-group"><label class="form-label">Type</label><select class="form-select" id="ns-type"><option value="RUG">RUG</option><option value="BRDLM">BRDLM</option></select></div>
+                <div class="form-group"><label class="form-label">Barcode (auto-assigned)</label><input class="form-input" type="text" id="ns-barcode-preview" readonly placeholder="Generated on save"/></div>
+                <div class="form-group full"><label class="form-label">Design Name</label><input class="form-input" type="text" id="ns-design" placeholder="e.g. Moroccan Wool"/></div>
+                <div class="form-group"><label class="form-label">Color</label><input class="form-input" type="text" id="ns-color" placeholder="e.g. Ivory"/></div>
+                <div class="form-group"><label class="form-label">Size</label><select class="form-select" id="ns-size"></select></div>
+                <div class="form-group"><label class="form-label">Vendor</label><input class="form-input" type="text" id="ns-vendor" placeholder="STARK"/></div>
+                <div class="form-group full"><label class="form-label">Notes</label><input class="form-input" type="text" id="ns-notes" placeholder="Optional..."/></div>
+              </div>
+              <div style="display:flex;gap:8px;justify-content:flex-end">
+                <button class="btn btn-ghost" onclick="showScreen('catalog',null)">Cancel</button>
+                <button class="btn btn-primary" onclick="saveSample()">Save &amp; Generate Barcode</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Remove from Sample Catalog</div><span class="badge badge-overdue">Retire</span></div>
+            <div style="padding:16px 18px">
+              <p style="font-size:13px;color:#7a7670;margin-bottom:14px">Search for a sample to retire. Retired samples are kept as records but removed from active searches.</p>
+              <div class="form-group" style="margin-bottom:10px">
+                <label class="form-label">Search Barcode or Design | Color</label>
+                <div style="display:flex;gap:8px"><input class="form-input" type="text" id="retire-search" placeholder="Barcode or design name..." style="flex:1"/><button class="btn btn-ghost" onclick="retireSearch()">Search</button></div>
+              </div>
+              <div id="retire-results" style="margin-bottom:12px"></div>
+              <div id="retire-selected-card" style="display:none;background:#fff8f8;border:1px solid #fce8e8;border-radius:6px;padding:12px;margin-bottom:12px">
+                <div style="font-size:11px;color:#b03030;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Selected for removal</div>
+                <div style="font-weight:600;font-size:14px" id="retire-selected-name"></div>
+                <div style="font-size:12px;color:#7a7670;margin-top:2px" id="retire-selected-barcode"></div>
+              </div>
+              <div class="form-group" style="margin-bottom:12px"><label class="form-label">Reason</label><select class="form-select" id="retire-reason"><option value="discontinued">Discontinued</option><option value="damaged">Damaged</option><option value="lost">Lost</option><option value="replaced">Replaced</option><option value="other">Other</option></select></div>
+              <div class="form-group" style="margin-bottom:14px"><label class="form-label">Notes</label><input class="form-input" type="text" id="retire-notes" placeholder="Optional..."/></div>
+              <button class="btn btn-danger" id="retire-btn" onclick="retireSampleFromCatalog()" disabled style="width:100%;opacity:.5;justify-content:center">Remove from Catalog</button>
+            </div>
+          </div>
+          <div class="card" style="grid-column:1/-1">
+            <div class="card-header"><div class="card-title">Remove from Showroom Inventory</div><span class="badge badge-out">Physical removal</span></div>
+            <div style="padding:16px 18px">
+              <p style="font-size:13px;color:#7a7670;margin-bottom:14px">Search for a physical item in inventory to remove when damaged, lost, or returned to warehouse.</p>
+              <div class="form-group" style="margin-bottom:10px">
+                <label class="form-label">Search Barcode or Design | Color</label>
+                <div style="display:flex;gap:8px"><input class="form-input" type="text" id="inv-retire-search" placeholder="Barcode or design name..." style="flex:1"/><button class="btn btn-ghost" onclick="invRetireSearch()">Search</button></div>
+              </div>
+              <div id="inv-retire-results" style="margin-bottom:12px"></div>
+              <div id="inv-retire-selected-card" style="display:none;background:#fff8f8;border:1px solid #fce8e8;border-radius:6px;padding:12px;margin-bottom:12px">
+                <div style="font-size:11px;color:#b03030;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Selected for removal</div>
+                <div style="font-weight:600;font-size:14px" id="inv-retire-selected-name"></div>
+                <div style="font-size:12px;color:#7a7670;margin-top:2px" id="inv-retire-selected-barcode"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+                <div class="form-group"><label class="form-label">Reason</label><select class="form-select" id="inv-retire-reason"><option value="discontinued">Discontinued</option><option value="damaged">Damaged</option><option value="lost">Lost</option><option value="returned_warehouse">Returned to warehouse</option><option value="other">Other</option></select></div>
+                <div class="form-group"><label class="form-label">Notes</label><input class="form-input" type="text" id="inv-retire-notes" placeholder="Optional..."/></div>
+              </div>
+              <button class="btn btn-danger" id="inv-retire-btn" onclick="retireSampleFromInventory()" disabled style="width:100%;opacity:.5;justify-content:center">Remove from Inventory</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVENTORY -->
+      <div class="screen" id="screen-inventory">
+        <div class="kpi-row" style="grid-template-columns:repeat(5,1fr)">
+          <div class="kpi"><div class="kpi-val" id="inv-total">--</div><div class="kpi-label">Total Items</div></div>
+          <div class="kpi"><div class="kpi-val green-val" id="inv-in">--</div><div class="kpi-label">In Showroom</div></div>
+          <div class="kpi"><div class="kpi-val amber" id="inv-out">--</div><div class="kpi-label">Checked Out</div></div>
+          <div class="kpi"><div class="kpi-val red" id="inv-missing">--</div><div class="kpi-label">Missing</div></div>
+          <div class="kpi"><div class="kpi-val" id="inv-rug-brdlm">--</div><div class="kpi-label">RUG / BRDLM</div></div>
+        </div>
+        <div style="display:flex;gap:8px;margin:14px 0;align-items:center">
+          <button class="btn btn-primary" id="inv-view-summary" onclick="invSetView('summary')">Summary by Design</button>
+          <button class="btn btn-ghost" id="inv-view-detail" onclick="invSetView('detail')">All Items</button>
+          <button class="btn btn-ghost" id="inv-view-scan" onclick="invSetView('scan')">+ Scan In</button>
+          <button class="btn btn-ghost" onclick="exportInventory()" style="margin-left:auto">Export CSV</button>
+        </div>
+        <div id="inv-summary-view">
+          <div class="filter-bar">
+            <input class="search-input" type="text" id="inv-summary-search" placeholder="Search design..." oninput="renderInvSummary()"/>
+            <select class="filter-select-sm" id="inv-summary-type" onchange="renderInvSummary()"><option value="">All Types</option><option value="RUG">RUG</option><option value="BRDLM">BRDLM</option></select>
+          </div>
+          <div class="card"><table><thead><tr><th>Design | Color</th><th>Type</th><th>Size</th><th style="text-align:center">Total Qty</th><th style="text-align:center">In Showroom</th><th style="text-align:center">Checked Out</th><th style="text-align:center">Missing</th></tr></thead><tbody id="inv-summary-tbody"><tr><td colspan="7" class="loading">Loading...</td></tr></tbody></table></div>
+        </div>
+        <div id="inv-detail-view" style="display:none">
+          <div class="filter-bar">
+            <input class="search-input" type="text" id="inv-search" placeholder="Search barcode, design..." oninput="renderInventory()"/>
+            <select class="filter-select-sm" id="inv-type-filter" onchange="renderInventory()"><option value="">All Types</option><option value="RUG">RUG</option><option value="BRDLM">BRDLM</option></select>
+            <select class="filter-select-sm" id="inv-status-filter" onchange="renderInventory()"><option value="">All Statuses</option><option value="in_showroom">In Showroom</option><option value="checked_out">Checked Out</option><option value="missing">Missing</option></select>
+          </div>
+          <div class="card"><table><thead><tr><th>Barcode</th><th>Type</th><th>Design | Color</th><th>Size</th><th>Condition</th><th>Status</th><th>Scanned In</th><th>By</th><th></th></tr></thead><tbody id="inv-tbody"><tr><td colspan="9" class="loading">Loading...</td></tr></tbody></table></div>
+        </div>
+        <div id="inv-scan-view" style="display:none">
+          <div class="scan-hero" style="margin-bottom:14px">
+            <div class="scan-icon">[+]</div>
+            <div style="flex:1">
+              <div class="scan-label">Scan or search to add to showroom inventory</div>
+              <div style="display:flex;gap:8px;margin-bottom:8px">
+                <input class="scan-input" type="text" id="inv-scan-field" placeholder="Scan barcode..." style="flex:1"/>
+                <button onclick="invAddSingle()" style="background:#c49a3c;border:none;border-radius:6px;padding:10px 16px;font-size:13px;font-weight:700;color:#1a1814;cursor:pointer">+ Add</button>
+              </div>
+              <div style="display:flex;gap:8px;align-items:flex-end">
+                <div class="design-search-wrap" style="flex:1">
+                  <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#b0ada6;margin-bottom:5px">Or search by Design | Color</div>
+                  <input class="design-search-input" type="text" id="inv-design-search" placeholder="e.g. Moroccan Wool | Ivory..." oninput="dsSearch('inv')"/>
+                  <div class="design-dropdown" id="inv-design-dropdown"></div>
+                </div>
+                <div style="flex-shrink:0">
+                  <div style="font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#b0ada6;margin-bottom:5px">Size</div>
+                  <select class="form-select" id="inv-size-select" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff;min-width:160px" disabled onchange="dsOnSizeSelect('inv')"><option value="">Select design first...</option></select>
+                </div>
+                <button id="inv-ds-add-btn" onclick="dsAddToQueue('inv')" style="background:#c49a3c;border:none;border-radius:6px;padding:9px 14px;font-size:13px;font-weight:700;color:#1a1814;cursor:pointer;opacity:.4;flex-shrink:0" disabled>+ Add</button>
+              </div>
+            </div>
+          </div>
+          <div class="card" id="inv-queue-card" style="display:none;margin-bottom:14px">
+            <div class="card-header">
+              <div class="card-title">Scan Queue</div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <span class="badge badge-loan" id="inv-queue-badge">0 items</span>
+                <button class="btn btn-primary" id="inv-confirm-btn" onclick="invBulkConfirm()" style="padding:5px 12px;font-size:12px">Add All to Inventory</button>
+                <button class="btn btn-ghost" onclick="invClearQueue()" style="padding:5px 12px;font-size:12px">Clear</button>
+              </div>
+            </div>
+            <table><thead><tr><th>Barcode</th><th>Design | Color</th><th>Size</th><th>In Catalog</th><th></th></tr></thead><tbody id="inv-queue-tbody"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ANALYTICS -->
+      <div class="screen" id="screen-analytics">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+          <select class="filter-select-sm" id="analytics-period" onchange="loadAnalytics()"><option value="30d">Last 30 days</option><option value="90d">Last 90 days</option><option value="1y">Last 12 months</option></select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div class="card"><div class="card-header"><div class="card-title">Most Loaned Designs</div></div><div class="bar-chart" id="chart-designs"><div class="loading">Loading...</div></div></div>
+          <div class="card"><div class="card-header"><div class="card-title">Loans by Account Manager</div></div><div class="bar-chart" id="chart-ams"><div class="loading">Loading...</div></div></div>
+          <div class="card"><div class="card-header"><div class="card-title">Top Accounts</div></div><div class="bar-chart" id="chart-accounts"><div class="loading">Loading...</div></div></div>
+          <div class="card"><div class="card-header"><div class="card-title">Loans by Type</div></div><div class="bar-chart" id="chart-types"><div class="loading">Loading...</div></div></div>
+        </div>
+      </div>
+
+      <!-- LOCATIONS -->
+      <div class="screen" id="screen-locations">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn btn-primary">+ Add Location</button></div>
+        <div class="card"><table><thead><tr><th>Name</th><th>City</th><th>State</th><th>Status</th></tr></thead><tbody id="locations-tbody"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody></table></div>
+      </div>
+
+      <!-- USERS -->
+      <div class="screen" id="screen-users">
+        <div style="display:flex;gap:8px;margin-bottom:12px;justify-content:space-between;align-items:center">
+          <div style="display:flex;gap:6px"><span class="badge badge-admin" style="font-size:11px;padding:4px 10px">Super Admin</span><span class="badge badge-data" style="font-size:11px;padding:4px 10px">Data Admin</span></div>
+          <button class="btn btn-primary">+ Add User</button>
+        </div>
+        <div class="card"><table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Last Active</th><th>Status</th></tr></thead><tbody id="users-tbody"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody></table></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────
+var API_URL = 'https://vlhobkzqfrqpgptbhmik.supabase.co/functions/v1/stark-api';
+var ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZsaG9ia3pxZnJxcGdwdGJobWlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAzNjExMzcsImV4cCI6MjEwNTkzNzEzN30.kHuA3cGpJGPbAzbbNyuq0xRWf-x__1m74tH6uFX7UnQ';
+
+// ── STATE ─────────────────────────────────────────────────
+var currentUser = null;
+var sessionToken = null;
+var allLoans = [];
+var allSamples = [];
+var allInventory = [];
+var allAMs = [];
+var allLocations = [];
+var scanQueue = [];
+var returnQueue = [];
+var invQueue = [];
+var activeLoanType = 'client_loan';
+var catalogPage = 1;
+var catalogTotal = 0;
+var catalogPages = 0;
+var dsSelected = {inv:null, co:null, ret:null};
+var dsTimer = {inv:null, co:null, ret:null};
+var retireSelectedSample = null;
+var invRetireSelected = null;
+
+var TITLES = {
+  dashboard:'Dashboard', scan:'Check Out Samples', return:'Check In Samples',
+  loans:'Loan History', catalog:'Sample Catalog', addsample:'Add / Remove Samples to Sample Catalog',
+  inventory:'Showroom Inventory', analytics:'Analytics', locations:'Showroom Locations', users:'Users and Roles'
+};
+
+// ── API CALL ──────────────────────────────────────────────
+function api(action, payload) {
+  return fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': ANON_KEY,
+      'Authorization': 'Bearer ' + ANON_KEY
+    },
+    body: JSON.stringify({ action: action, payload: payload || {}, token: sessionToken })
+  }).then(function(r) { return r.json(); });
+}
+
+// ── AUTH ──────────────────────────────────────────────────
+function doLogin() {
+  var emailEl = document.getElementById('login-email');
+  var errEl   = document.getElementById('login-error');
+  var btn     = document.getElementById('login-btn');
+  errEl.textContent = '';
+  var email = emailEl ? emailEl.value.trim() : '';
+  if (!email) { errEl.textContent = 'Please enter your email.'; return; }
+  btn.textContent = 'Signing in...';
+  btn.disabled = true;
+  api('login', { email: email.toLowerCase() })
+    .then(function(res) {
+      btn.textContent = 'Sign In';
+      btn.disabled = false;
+      if (!res.success) { errEl.textContent = res.error || 'Login failed'; return; }
+      sessionToken = res.token;
+      currentUser  = res.user;
+      localStorage.setItem('stark_token', sessionToken);
+      localStorage.setItem('stark_user', JSON.stringify(currentUser));
+      showApp();
+    })
+    .catch(function(err) {
+      btn.textContent = 'Sign In';
+      btn.disabled = false;
+      errEl.textContent = 'Connection error: ' + err.message;
+    });
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-name').textContent = currentUser.name;
+  document.getElementById('user-role-label').textContent = currentUser.role === 'super_admin' ? 'Super Admin' : 'Data Admin';
+  document.getElementById('user-avatar').textContent = currentUser.name.split(' ').map(function(n){return n[0];}).join('').slice(0,2).toUpperCase();
+  document.getElementById('co-by').value = currentUser.name;
+  document.getElementById('il-by').value = currentUser.name;
+  if (currentUser.role === 'super_admin') document.getElementById('nav-admin').style.display = 'block';
+  initApp();
+}
+
+function doLogout() {
+  sessionToken = null; currentUser = null;
+  localStorage.removeItem('stark_token'); localStorage.removeItem('stark_user');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-error').textContent = '';
+}
+
+// Auto-restore session
+(function() {
+  var t = localStorage.getItem('stark_token');
+  var u = localStorage.getItem('stark_user');
+  if (t && u) {
+    try {
+      sessionToken = t; currentUser = JSON.parse(u);
+      // Verify token is still valid by checking expiry from payload
+      var payload = JSON.parse(atob(t.split('.')[0]));
+      if (Date.now() < payload.exp) { showApp(); return; }
+    } catch(e) {}
+    localStorage.removeItem('stark_token'); localStorage.removeItem('stark_user');
+  }
+})();
+
+// ── INIT ──────────────────────────────────────────────────
+function initApp() {
+  var today = new Date().toISOString().slice(0,10);
+  var ret   = new Date(Date.now() + 14*86400000).toISOString().slice(0,10);
+  ['co-date','il-date'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=today; });
+  ['co-return','il-return'].forEach(function(id){ var e=document.getElementById(id); if(e) e.value=ret; });
+  loadDropdowns();
+  loadDashboard();
+}
+
+function showScreen(id, navEl) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  var s = document.getElementById('screen-'+id);
+  if (s) s.classList.add('active');
+  if (navEl) navEl.classList.add('active');
+  document.getElementById('topbar-title').textContent = TITLES[id] || id;
+  if (id === 'dashboard') loadDashboard();
+  if (id === 'loans')     loadLoans();
+  if (id === 'catalog')   loadCatalog(1);
+  if (id === 'analytics') loadAnalytics();
+  if (id === 'users')     loadUsers();
+  if (id === 'inventory') loadInventory();
+  if (id === 'locations') loadLocations();
+}
+
+// ── DROPDOWNS ─────────────────────────────────────────────
+function loadDropdowns() {
+  api('getAccountManagers').then(function(res) {
+    if (!res.success) return;
+    allAMs = res.data;
+    var s = document.getElementById('co-am');
+    var lf = document.getElementById('loan-am');
+    res.data.forEach(function(am) {
+      s.innerHTML += '<option value="'+am.am_id+'">'+am.name+'</option>';
+      if (lf) lf.innerHTML += '<option value="'+am.name+'">'+am.name+'</option>';
+    });
+  });
+  api('getLocations').then(function(res) {
+    if (!res.success) return;
+    allLocations = res.data;
+    ['il-origin','il-dest'].forEach(function(id) {
+      var sel = document.getElementById(id);
+      if (!sel) return;
+      res.data.forEach(function(l){ sel.innerHTML += '<option value="'+l.location_id+'">'+l.name+'</option>'; });
+    });
+  });
+  api('getSampleSizes').then(function(res) {
+    if (!res.success) return;
+    var s = document.getElementById('ns-size');
+    res.data.forEach(function(sz){ s.innerHTML += '<option value="'+sz.label+'">'+sz.label+'</option>'; });
+  });
+  api('getDeliveryMethods').then(function(res) {
+    if (!res.success) return;
+    var s = document.getElementById('co-delivery');
+    res.data.forEach(function(m){ s.innerHTML += '<option value="'+m.label+'">'+m.label+'</option>'; });
+  });
+}
+
+function loadAccounts() {
+  var am = document.getElementById('co-am');
+  var amId = am ? am.value : '';
+  var acct = document.getElementById('co-account');
+  acct.innerHTML = '<option value="">Select account...</option>';
+  if (!amId) return;
+  api('getAccounts', {am_id: amId}).then(function(res) {
+    if (!res.success) return;
+    res.data.forEach(function(a){ acct.innerHTML += '<option value="'+a.account_id+'">'+a.name+'</option>'; });
+  });
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────
+function loadDashboard() {
+  api('getDashboardStats').then(function(res) {
+    if (!res.success) { showToast('Dashboard error: '+res.error, 'error'); return; }
+    var d = res.data;
+    document.getElementById('kpi-out').textContent      = d.total_out;
+    document.getElementById('kpi-overdue').textContent  = d.overdue_count;
+    document.getElementById('kpi-week').textContent     = d.due_this_week;
+    document.getElementById('kpi-returned').textContent = d.returned_today;
+    var badge = document.getElementById('overdue-badge');
+    if (d.overdue_count > 0) { badge.textContent = d.overdue_count; badge.style.display = ''; }
+    else badge.style.display = 'none';
+    document.getElementById('overdue-count-badge').textContent = d.overdue_count + ' item' + (d.overdue_count !== 1 ? 's' : '');
+    var tbody = document.getElementById('overdue-tbody');
+    if (!d.overdue_loans || d.overdue_loans.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#7a7670;padding:18px">No overdue samples</td></tr>';
+    } else {
+      tbody.innerHTML = d.overdue_loans.map(function(l) {
+        return '<tr style="background:#fff8f8"><td><span class="mono">'+l.barcode+'</span></td><td>'+(l.account_manager_name||'--')+'</td><td>'+(l.account_name||'--')+'</td><td><span class="badge badge-overdue">+'+l.days_overdue+'d</span></td><td><button class="btn btn-ghost" style="padding:3px 9px;font-size:11px">Remind</button></td></tr>';
+      }).join('');
+    }
+    var feed = document.getElementById('activity-feed');
+    if (!d.recent_activity || d.recent_activity.length === 0) {
+      feed.innerHTML = '<div style="padding:14px;color:#7a7670;font-size:13px">No activity yet.</div>';
+    } else {
+      feed.innerHTML = d.recent_activity.map(function(a) {
+        return '<div class="feed-item"><div class="feed-dot '+(a.type==='return'?'in':'out')+'"></div><div><div class="feed-main"><strong>'+a.barcode+'</strong> '+(a.type==='return'?'returned':'checked out')+' by '+(a.checked_by||'--')+'</div><div class="feed-meta">'+(a.account||'--')+' - '+(a.project||'No project')+' - '+(a.date||'')+'</div></div></div>';
+      }).join('');
+    }
+  }).catch(function(err){ showToast('Dashboard error: '+err.message,'error'); });
+}
+
+// ── CHECKOUT QUEUE ────────────────────────────────────────
+function addToQueue() {
+  var field = document.getElementById('scan-field');
+  var val = field ? field.value.trim().toUpperCase() : '';
+  if (!val) return;
+  var idx = scanQueue.length;
+  scanQueue.push({barcode:val, sample:null, loading:true});
+  renderQueue(); field.value=''; field.focus();
+  field.style.borderColor='rgba(196,154,60,.8)';
+  setTimeout(function(){field.style.borderColor='';},300);
+  api('getSampleByBarcode', {barcode:val}).then(function(res) {
+    var item = scanQueue[idx]; if (!item) return;
+    if (!res.success || !res.data || !res.data.sample) {
+      scanQueue.splice(idx,1); renderQueue(); showToast('Not found: '+val,'error'); return;
+    }
+    if (res.data.active_loan) {
+      scanQueue.splice(idx,1); renderQueue(); showToast(val+' already checked out','error'); return;
+    }
+    item.sample = res.data.sample; item.loading = false; renderQueue();
+  }).catch(function(){scanQueue.splice(idx,1);renderQueue();showToast('Lookup failed','error');});
+}
+
+function removeFromQueue(idx) { scanQueue.splice(idx,1); renderQueue(); }
+function clearQueue() { scanQueue=[]; renderQueue(); }
+
+function renderQueue() {
+  var count = scanQueue.length;
+  document.getElementById('queue-count-badge').textContent = count+' sample'+(count!==1?'s':'');
+  document.getElementById('confirm-summary').textContent = count+' sample'+(count!==1?'s':'')+' will be checked out';
+  document.getElementById('queue-empty').style.display = count===0?'block':'none';
+  document.getElementById('queue-table').style.display = count===0?'none':'table';
+  document.getElementById('queue-tbody').innerHTML = scanQueue.map(function(s,i) {
+    var totalSame=0,sameCount=0;
+    scanQueue.forEach(function(x){if(x.barcode===s.barcode)totalSame++;});
+    for(var k=0;k<=i;k++){if(scanQueue[k].barcode===s.barcode)sameCount++;}
+    var qtyLabel = totalSame>1?' <span style="background:#e8f0fb;color:#2c5282;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px">copy '+sameCount+' of '+totalSame+'</span>':'';
+    var dc = s.loading ? '<span style="color:#b0ada6;font-style:italic;font-size:12px">Looking up...</span>' : '<span style="font-weight:600">'+[(s.sample?(s.sample.design_name||''):'').toUpperCase(),(s.sample?(s.sample.color||''):'').toUpperCase()].filter(Boolean).join(' | ')+'</span>';
+    return '<tr'+(s.loading?' style="background:#fafaf8"':'')+'><td style="color:#3a6b4a">'+(s.loading?'...':'OK')+'</td><td><span class="mono">'+s.barcode+'</span>'+qtyLabel+'</td><td>'+dc+'</td><td style="color:#7a7670;font-size:12px">'+(s.sample?(s.sample.size||'--'):'')+'</td><td>'+(s.loading?'':'<span class="badge badge-in">In Showroom</span>')+'</td><td><button onclick="removeFromQueue('+i+')" style="background:none;border:none;cursor:pointer;color:#b0ada6;font-size:16px">x</button></td></tr>';
+  }).join('');
+}
+
+function setLoanType(type) {
+  activeLoanType = type;
+  document.getElementById('client-loan-fields').style.display = type==='client_loan'?'':'none';
+  document.getElementById('inter-location-fields').style.display = type==='inter_location'?'':'none';
+  document.getElementById('type-client').className = 'btn '+(type==='client_loan'?'btn-primary':'btn-ghost');
+  document.getElementById('type-inter').className  = 'btn '+(type==='inter_location'?'btn-primary':'btn-ghost');
+}
+
+function confirmCheckout() {
+  if (scanQueue.length===0) { showToast('Scan at least one sample','error'); return; }
+  if (scanQueue.some(function(s){return s.loading;})) { showToast('Wait for lookups to complete','error'); return; }
+  var loanData;
+  if (activeLoanType==='client_loan') {
+    var ams=document.getElementById('co-am'); var accts=document.getElementById('co-account');
+    loanData={loan_type:'client_loan',account_manager_name:ams&&ams.selectedIndex>0?ams.options[ams.selectedIndex].text:'',account_name:accts&&accts.selectedIndex>0?accts.options[accts.selectedIndex].text:'',project:document.getElementById('co-project').value,sidemark:document.getElementById('co-sidemark').value,delivery_method:document.getElementById('co-delivery').value,checked_out_date:document.getElementById('co-date').value,expected_return_date:document.getElementById('co-return').value,notes:document.getElementById('co-notes').value};
+  } else {
+    var orig=document.getElementById('il-origin'); var dest=document.getElementById('il-dest');
+    loanData={loan_type:'inter_location',origin_location_name:orig&&orig.selectedIndex>0?orig.options[orig.selectedIndex].text:'',dest_location_name:dest&&dest.selectedIndex>0?dest.options[dest.selectedIndex].text:'',checked_out_date:document.getElementById('il-date').value,expected_return_date:document.getElementById('il-return').value,notes:document.getElementById('il-notes').value};
+  }
+  var barcodes = scanQueue.map(function(s){return s.barcode;});
+  var btn = document.getElementById('confirm-btn'); btn.textContent='Processing...'; btn.disabled=true;
+  api('checkoutSamples', {loanData:loanData, barcodes:barcodes})
+    .then(function(res) {
+      btn.textContent='Confirm Checkout'; btn.disabled=false;
+      if (res.success) {
+        var ok = res.data.filter(function(r){return r.success;}).length;
+        showToast(ok+' sample'+(ok!==1?'s':'')+' checked out','success');
+        clearQueue();
+      } else showToast('Error: '+(res.error||'Unknown'),'error');
+    }).catch(function(err){btn.textContent='Confirm Checkout';btn.disabled=false;showToast('Error: '+err.message,'error');});
+}
+
+// ── RETURN QUEUE ──────────────────────────────────────────
+function addToReturnQueue() {
+  var field = document.getElementById('return-field');
+  var val = field ? field.value.trim().toUpperCase() : '';
+  if (!val) return;
+  var idx = returnQueue.length;
+  returnQueue.push({barcode:val,loan_id:'',account:'Looking up...',am:'',out_date:'',design:'',color:'',loading:true});
+  renderReturnQueue();
+  document.getElementById('return-queue-card').style.display='';
+  document.getElementById('return-confirm-card').style.display='';
+  field.value=''; field.focus();
+  field.style.borderColor='rgba(196,154,60,.8)';
+  setTimeout(function(){field.style.borderColor='';},300);
+  api('getSampleByBarcode', {barcode:val}).then(function(res) {
+    var item = returnQueue[idx]; if (!item) return;
+    if (!res.success || !res.data || !res.data.active_loan) {
+      returnQueue.splice(idx,1); renderReturnQueue();
+      if (returnQueue.length===0) { document.getElementById('return-queue-card').style.display='none'; document.getElementById('return-confirm-card').style.display='none'; }
+      showToast('No active loan found for '+val,'error'); return;
+    }
+    var loan=res.data.active_loan; var sample=res.data.sample;
+    item.loan_id=loan.loan_id; item.account=loan.account_name||loan.dest_location_name||'--';
+    item.out_date=loan.checked_out_date||'--'; item.design=sample?sample.design_name:''; item.color=sample?sample.color:''; item.loading=false;
+    renderReturnQueue();
+  }).catch(function(err){var item=returnQueue[idx];if(item){item.account='Lookup failed';item.loading=false;}renderReturnQueue();});
+}
+
+function renderReturnQueue() {
+  var count = returnQueue.length;
+  var badge = document.getElementById('return-queue-badge'); if(badge)badge.textContent=count+' sample'+(count!==1?'s':'');
+  var sum = document.getElementById('ret-summary'); if(sum)sum.textContent=count+' sample'+(count!==1?'s':'')+' will be returned';
+  var tbody = document.getElementById('return-queue-tbody'); if(!tbody)return;
+  tbody.innerHTML = returnQueue.map(function(r,i) {
+    var totalSame=0,sameCount=0;
+    returnQueue.forEach(function(x){if(x.barcode===r.barcode)totalSame++;});
+    for(var k=0;k<=i;k++){if(returnQueue[k].barcode===r.barcode)sameCount++;}
+    var qtyLabel = totalSame>1?' <span style="background:#e8f0fb;color:#2c5282;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px">copy '+sameCount+' of '+totalSame+'</span>':'';
+    var dc = r.loading?'':([(r.design||'').toUpperCase(),(r.color||'').toUpperCase()].filter(Boolean).join(' | ')||'--');
+    return '<tr'+(r.loading?' style="background:#fafaf8"':'')+'><td><span class="mono">'+r.barcode+'</span>'+qtyLabel+'</td><td style="font-weight:600">'+(r.loading?'<span style="color:#b0ada6;font-style:italic;font-size:12px">Looking up...</span>':dc)+'</td><td>'+(r.loading?'<span style="color:#b0ada6;font-size:12px">...</span>':r.account)+'</td><td style="color:#7a7670;font-size:12px">'+(r.loading?'':r.out_date)+'</td><td>'+(r.loading?'':'<span class="badge badge-out">Out</span>')+'</td><td><button onclick="removeFromReturnQueue('+i+')" style="background:none;border:none;cursor:pointer;color:#b0ada6;font-size:16px">x</button></td></tr>';
+  }).join('');
+}
+
+function removeFromReturnQueue(idx) {
+  returnQueue.splice(idx,1); renderReturnQueue();
+  if(returnQueue.length===0){document.getElementById('return-queue-card').style.display='none';document.getElementById('return-confirm-card').style.display='none';}
+}
+
+function clearReturnQueue() {
+  returnQueue=[]; renderReturnQueue();
+  document.getElementById('return-queue-card').style.display='none';
+  document.getElementById('return-confirm-card').style.display='none';
+  document.getElementById('return-field').value='';
+  document.getElementById('ret-notes').value='';
+}
+
+function confirmAllReturns() {
+  if(returnQueue.length===0){showToast('No samples in queue','error');return;}
+  if(returnQueue.some(function(r){return r.loading;})){showToast('Wait for lookups to complete','error');return;}
+  var notes=document.getElementById('ret-notes').value;
+  var btn=document.getElementById('ret-confirm-btn'); btn.textContent='Processing...'; btn.disabled=true;
+  var barcodes=returnQueue.map(function(r){return r.barcode;});
+  var results=[]; var idx=0;
+  function next() {
+    if(idx>=barcodes.length) {
+      btn.textContent='Confirm Returns'; btn.disabled=false;
+      var ok=results.filter(function(r){return r.success;}).length;
+      showToast(ok+' of '+barcodes.length+' sample'+(barcodes.length!==1?'s':'')+' returned','success');
+      clearReturnQueue(); loadDashboard(); return;
+    }
+    api('returnSample',{barcode:barcodes[idx],notes:notes}).then(function(res){results.push(res);idx++;next();}).catch(function(){results.push({success:false});idx++;next();});
+  }
+  next();
+}
+
+// ── LOANS ─────────────────────────────────────────────────
+function loadLoans() {
+  var status = document.getElementById('loan-status')?document.getElementById('loan-status').value:'';
+  var am     = document.getElementById('loan-am')?document.getElementById('loan-am').value:'';
+  var search = document.getElementById('loan-search')?document.getElementById('loan-search').value:'';
+  api('getLoans',{status:status,am_name:am,search:search}).then(function(res) {
+    if(!res.success){showToast('Error: '+res.error,'error');return;}
+    allLoans=res.data.rows; renderLoans();
+  });
+}
+
+function renderLoans() {
+  var q=document.getElementById('loan-search')?document.getElementById('loan-search').value.toLowerCase():'';
+  var status=document.getElementById('loan-status')?document.getElementById('loan-status').value:'';
+  var am=document.getElementById('loan-am')?document.getElementById('loan-am').value:'';
+  var f=allLoans;
+  if(q){f=f.filter(function(l){return JSON.stringify(l).toLowerCase().indexOf(q)!==-1;});}
+  if(status==='overdue'){f=f.filter(function(l){return l.is_overdue;});}
+  else if(status){f=f.filter(function(l){return l.status===status;});}
+  if(am){f=f.filter(function(l){return l.account_manager_name===am;});}
+  var tbody=document.getElementById('loans-tbody');
+  if(f.length===0){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:#7a7670;padding:18px">No loans match filters.</td></tr>';return;}
+  tbody.innerHTML=f.map(function(l) {
+    var dc=[(l.design_name||''),(l.color||'')].filter(Boolean).map(function(v){return v.toUpperCase();}).join(' | ')||'--';
+    var sb=l.is_overdue?'<span class="badge badge-overdue">Overdue</span>':l.status==='returned'?'<span class="badge badge-in">Returned</span>':'<span class="badge badge-out">Out</span>';
+    return '<tr'+(l.is_overdue?' style="background:#fff8f8"':'')+'><td><span class="mono">'+l.barcode+'</span></td><td>'+dc+'</td><td>'+sb+'</td><td>'+(l.account_manager_name||'--')+'</td><td>'+(l.account_name||'--')+'</td><td>'+(l.project||'--')+'</td><td>'+(l.checked_out_date||'--')+'</td><td>'+(l.expected_return_date||'--')+'</td><td>'+(l.actual_return_date||'--')+'</td></tr>';
+  }).join('');
+}
+
+function exportLoans() {
+  var headers=['barcode','status','account_manager_name','account_name','project','sidemark','checked_out_date','expected_return_date','actual_return_date','checked_out_by','checked_in_by'];
+  var csv=[headers.join(',')].concat(allLoans.map(function(r){return headers.map(function(h){return '"'+String(r[h]||'').replace(/"/g,'""')+'"';}).join(',');})).join('\n');
+  var blob=new Blob([csv],{type:'text/csv'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='STARK_Loans_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
+// ── CATALOG ───────────────────────────────────────────────
+function loadCatalog(page) {
+  page=page||1; catalogPage=page;
+  var filters={search:document.getElementById('cat-search')?document.getElementById('cat-search').value:'',type_code:document.getElementById('cat-type')?document.getElementById('cat-type').value:'',status:document.getElementById('cat-status')?document.getElementById('cat-status').value:''};
+  document.getElementById('catalog-tbody').innerHTML='<tr><td colspan="5" class="loading">Loading...</td></tr>';
+  var pg=document.getElementById('catalog-pager');if(pg)pg.innerHTML='';
+  api('getSamples',Object.assign({},filters,{page:page,pageSize:100})).then(function(res) {
+    if(!res.success){showToast('Error: '+res.error,'error');return;}
+    allSamples=res.data.rows; catalogTotal=res.data.total; catalogPages=res.data.pages;
+    renderCatalog(); renderCatalogPager();
+  });
+}
+
+function renderCatalog() {
+  var tbody=document.getElementById('catalog-tbody');
+  if(!allSamples||allSamples.length===0){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#7a7670;padding:18px">No samples found.</td></tr>';return;}
+  tbody.innerHTML=allSamples.map(function(s) {
+    var tb=s.type_code==='RUG'?'<span class="badge badge-rug">RUG</span>':'<span class="badge badge-brdlm">BRDLM</span>';
+    var sb=s.status==='checked_out'?'<span class="badge badge-out">Out</span>':s.status==='retired'?'<span class="badge" style="background:#edeae4;color:#7a7670">Retired</span>':'<span class="badge badge-in">In</span>';
+    var dc=[(s.design_name||'').toUpperCase(),(s.color||'').toUpperCase()].filter(Boolean).join(' | ')||'--';
+    return '<tr><td><span class="mono">'+s.barcode+'</span></td><td>'+tb+'</td><td style="font-weight:600">'+dc+'</td><td style="color:#7a7670;font-size:12px">'+(s.size||'--')+'</td><td>'+sb+'</td></tr>';
+  }).join('');
+}
+
+function renderCatalogPager() {
+  var el=document.getElementById('catalog-pager');if(!el)return;
+  var start=((catalogPage-1)*100)+1;
+  var end=Math.min(catalogPage*100,catalogTotal);
+  var h='<div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border-top:1px solid #e8e4de;font-size:13px;color:#7a7670"><span>Showing '+start.toLocaleString()+'--'+end.toLocaleString()+' of '+catalogTotal.toLocaleString()+' samples</span><div style="margin-left:auto;display:flex;gap:6px">';
+  if(catalogPage>1)h+='<button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="loadCatalog('+(catalogPage-1)+')">Prev</button>';
+  if(catalogPage<catalogPages)h+='<button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="loadCatalog('+(catalogPage+1)+')">Next</button>';
+  h+='</div></div>';
+  el.innerHTML=h;
+}
+
+function saveSample() {
+  var design=document.getElementById('ns-design').value.trim();
+  var color=document.getElementById('ns-color').value.trim();
+  var size=document.getElementById('ns-size').value;
+  var type=document.getElementById('ns-type').value;
+  if(!design||!color||!size){showToast('Design, color, and size required','error');return;}
+  api('addSample',{type_code:type,design_name:design,color:color,size:size,vendor:document.getElementById('ns-vendor').value,notes:document.getElementById('ns-notes').value})
+    .then(function(res){
+      if(res.success){showToast('Added: '+res.data.barcode,'success');['ns-design','ns-color','ns-vendor','ns-notes'].forEach(function(id){document.getElementById(id).value='';});showScreen('catalog',null);loadCatalog(1);}
+      else showToast('Error: '+res.error,'error');
+    });
+}
+
+// ── RETIRE CATALOG SAMPLE ─────────────────────────────────
+function retireSearch() {
+  var q=document.getElementById('retire-search')?document.getElementById('retire-search').value.trim():'';
+  if(!q){showToast('Enter a barcode or design name','error');return;}
+  var resultsEl=document.getElementById('retire-results');
+  resultsEl.innerHTML='<div style="color:#7a7670;font-size:13px;padding:6px 0">Searching...</div>';
+  retireSelectedSample=null;
+  var btn=document.getElementById('retire-btn');if(btn){btn.disabled=true;btn.style.opacity='.5';}
+  document.getElementById('retire-selected-card').style.display='none';
+  api('getSamples',{search:q,page:1,pageSize:10}).then(function(res) {
+    if(!res.success){resultsEl.innerHTML='<div style="color:#b03030;font-size:13px">Error: '+res.error+'</div>';return;}
+    if(!res.data.rows||res.data.rows.length===0){resultsEl.innerHTML='<div style="color:#7a7670;font-size:13px;padding:6px 0">No samples found.</div>';return;}
+    var h='<div style="border:1px solid #e8e4de;border-radius:6px;overflow:hidden;max-height:200px;overflow-y:auto">';
+    res.data.rows.forEach(function(s) {
+      var dc=[(s.design_name||'').toUpperCase(),(s.color||'').toUpperCase()].filter(Boolean).join(' | ')||'--';
+      h+='<div onclick="retireSelectSample(\''+escQ(s.sample_id)+'\',\''+escQ(dc)+'\',\''+escQ(s.barcode)+'\',\''+escQ(s.size)+'\')" style="padding:9px 12px;border-bottom:1px solid #f0ede8;cursor:pointer;font-size:13px" onmouseover="this.style.background=\'#f5f2ed\'" onmouseout="this.style.background=\'\'"><span style="font-weight:600">'+dc+'</span><span style="color:#7a7670;font-size:11px;margin-left:8px">'+(s.size||'')+'</span><span style="font-family:monospace;color:#b0ada6;font-size:11px;float:right">'+s.barcode+'</span></div>';
+    });
+    h+='</div>';
+    if(res.data.total>res.data.rows.length)h+='<div style="font-size:11px;color:#7a7670;margin-top:4px">Showing '+res.data.rows.length+' of '+res.data.total+'. Refine your search.</div>';
+    resultsEl.innerHTML=h;
+  });
+}
+
+function retireSelectSample(sampleId,label,barcode,size) {
+  retireSelectedSample={sample_id:sampleId,label:label,barcode:barcode,size:size};
+  document.getElementById('retire-selected-name').textContent=label+(size?' -- '+size:'');
+  document.getElementById('retire-selected-barcode').textContent=barcode;
+  document.getElementById('retire-selected-card').style.display='';
+  document.getElementById('retire-results').innerHTML='';
+  var btn=document.getElementById('retire-btn');if(btn){btn.disabled=false;btn.style.opacity='1';}
+}
+
+function retireSampleFromCatalog() {
+  if(!retireSelectedSample){showToast('Select a sample first','error');return;}
+  var reason=document.getElementById('retire-reason')?document.getElementById('retire-reason').value:'discontinued';
+  var notes=document.getElementById('retire-notes')?document.getElementById('retire-notes').value:'';
+  if(!confirm('Remove "'+retireSelectedSample.label+'" from the Sample Catalog?'))return;
+  var btn=document.getElementById('retire-btn');if(btn){btn.textContent='Removing...';btn.disabled=true;}
+  api('retireSample',{sample_id:retireSelectedSample.sample_id,reason:reason+(notes?' -- '+notes:'')})
+    .then(function(res) {
+      if(btn){btn.textContent='Remove from Catalog';btn.style.opacity='.5';}
+      if(res.success){showToast('Sample removed from catalog','success');retireSelectedSample=null;document.getElementById('retire-search').value='';document.getElementById('retire-notes').value='';document.getElementById('retire-selected-card').style.display='none';document.getElementById('retire-results').innerHTML='';if(btn)btn.disabled=true;}
+      else{showToast('Error: '+(res.error||'Unknown'),'error');if(btn){btn.disabled=false;btn.style.opacity='1';}}
+    });
+}
+
+// ── INVENTORY ─────────────────────────────────────────────
+function loadInventory() {
+  api('getInventoryStats').then(function(res) {
+    if(!res.success)return;
+    var d=res.data;
+    document.getElementById('inv-total').textContent=d.total;
+    document.getElementById('inv-in').textContent=d.in_showroom;
+    document.getElementById('inv-out').textContent=d.checked_out;
+    document.getElementById('inv-missing').textContent=d.missing;
+    document.getElementById('inv-rug-brdlm').textContent=d.rugs+' / '+d.brdlm;
+  });
+  api('getInventory',{}).then(function(res) {
+    if(!res.success)return;
+    allInventory=res.data;
+    renderInvSummary(); renderInventory();
+  });
+}
+
+function invSetView(view) {
+  document.getElementById('inv-summary-view').style.display=view==='summary'?'':'none';
+  document.getElementById('inv-detail-view').style.display=view==='detail'?'':'none';
+  document.getElementById('inv-scan-view').style.display=view==='scan'?'':'none';
+  document.getElementById('inv-view-summary').className='btn '+(view==='summary'?'btn-primary':'btn-ghost');
+  document.getElementById('inv-view-detail').className='btn '+(view==='detail'?'btn-primary':'btn-ghost');
+  document.getElementById('inv-view-scan').className='btn '+(view==='scan'?'btn-primary':'btn-ghost');
+}
+
+function renderInvSummary() {
+  var q=document.getElementById('inv-summary-search')?document.getElementById('inv-summary-search').value.toLowerCase():'';
+  var type=document.getElementById('inv-summary-type')?document.getElementById('inv-summary-type').value:'';
+  var groups={};
+  allInventory.forEach(function(item) {
+    if(item.status==='retired')return;
+    var key=(item.design_name||'Unknown')+'||'+(item.color||'')+'||'+(item.size||'')+'||'+(item.type_code||'');
+    if(!groups[key])groups[key]={design_name:item.design_name||'Unknown',color:item.color||'',size:item.size||'--',type_code:item.type_code||'',total:0,in_showroom:0,checked_out:0,missing:0};
+    groups[key].total++;
+    if(item.status==='in_showroom')groups[key].in_showroom++;
+    if(item.status==='checked_out')groups[key].checked_out++;
+    if(item.status==='missing')groups[key].missing++;
+  });
+  var rows=Object.values(groups);
+  if(q)rows=rows.filter(function(r){return(r.design_name+' '+r.color+' '+r.size).toLowerCase().indexOf(q)!==-1;});
+  if(type)rows=rows.filter(function(r){return r.type_code===type;});
+  rows.sort(function(a,b){return(a.design_name+a.color).localeCompare(b.design_name+b.color);});
+  var tbody=document.getElementById('inv-summary-tbody');
+  if(rows.length===0){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:#7a7670;padding:22px">'+(allInventory.length===0?'No inventory yet. Click + Scan In to start.':'No items match.')+'</td></tr>';return;}
+  tbody.innerHTML=rows.map(function(r) {
+    var tb=r.type_code==='RUG'?'<span class="badge badge-rug">RUG</span>':'<span class="badge badge-brdlm">BRDLM</span>';
+    var dc=[r.design_name.toUpperCase(),r.color.toUpperCase()].filter(Boolean).join(' | ');
+    return '<tr><td style="font-weight:600">'+dc+'</td><td>'+tb+'</td><td style="color:#7a7670;font-size:12px">'+r.size+'</td><td style="text-align:center;font-size:18px;font-weight:700">'+r.total+'</td><td style="text-align:center;color:#3a6b4a;font-weight:600">'+r.in_showroom+'</td><td style="text-align:center;'+(r.checked_out>0?'color:#b06020;font-weight:600':'color:#7a7670')+'">'+(r.checked_out>0?r.checked_out:'--')+'</td><td style="text-align:center;'+(r.missing>0?'color:#b03030;font-weight:700':'color:#7a7670')+'">'+(r.missing>0?r.missing:'--')+'</td></tr>';
+  }).join('');
+}
+
+function renderInventory() {
+  var q=document.getElementById('inv-search')?document.getElementById('inv-search').value.toLowerCase():'';
+  var type=document.getElementById('inv-type-filter')?document.getElementById('inv-type-filter').value:'';
+  var status=document.getElementById('inv-status-filter')?document.getElementById('inv-status-filter').value:'';
+  var f=allInventory;
+  if(q)f=f.filter(function(r){return JSON.stringify(r).toLowerCase().indexOf(q)!==-1;});
+  if(type)f=f.filter(function(r){return r.type_code===type;});
+  if(status)f=f.filter(function(r){return r.status===status;});
+  var tbody=document.getElementById('inv-tbody');
+  if(f.length===0){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;color:#7a7670;padding:18px">No items match.</td></tr>';return;}
+  tbody.innerHTML=f.map(function(r) {
+    var tb=r.type_code==='RUG'?'<span class="badge badge-rug">RUG</span>':'<span class="badge badge-brdlm">BRDLM</span>';
+    var cb=r.condition==='damaged'?'<span class="badge badge-overdue">Damaged</span>':r.condition==='fair'?'<span class="badge badge-out">Fair</span>':'<span class="badge badge-in">Good</span>';
+    var sb=r.status==='checked_out'?'<span class="badge badge-out">Out</span>':r.status==='missing'?'<span class="badge badge-overdue">Missing</span>':r.status==='retired'?'<span class="badge" style="background:#edeae4;color:#7a7670">Retired</span>':'<span class="badge badge-in">In</span>';
+    var dc=[(r.design_name||'').toUpperCase(),(r.color||'').toUpperCase()].filter(Boolean).join(' | ')||'--';
+    return '<tr><td><span class="mono">'+(r.barcode||'--')+'</span></td><td>'+tb+'</td><td style="font-weight:600">'+dc+'</td><td style="color:#7a7670;font-size:12px">'+(r.size||'--')+'</td><td>'+cb+'</td><td>'+sb+'</td><td style="color:#7a7670;font-size:12px">'+(r.scanned_in_date||'--')+'</td><td style="color:#7a7670;font-size:12px">'+(r.scanned_in_by||'--')+'</td><td><button class="btn btn-ghost" style="padding:3px 9px;font-size:11px" onclick="invMarkMissing(\''+r.inventory_id+'\',\''+r.barcode+'\')">Missing</button></td></tr>';
+  }).join('');
+}
+
+function invAddSingle() {
+  var field=document.getElementById('inv-scan-field');
+  var val=field?field.value.trim().toUpperCase():'';
+  if(!val)return;
+  var idx=invQueue.length;
+  invQueue.push({barcode:val,design_name:'Looking up...',color:'',size:'',in_catalog:false,loading:true});
+  renderInvQueue(); document.getElementById('inv-queue-card').style.display='';
+  field.value=''; field.focus();
+  field.style.borderColor='rgba(196,154,60,.8)';
+  setTimeout(function(){field.style.borderColor='';},300);
+  api('getSampleByBarcode',{barcode:val}).then(function(res) {
+    var item=invQueue[idx];if(!item)return;
+    if(res.success&&res.data&&res.data.sample){item.design_name=res.data.sample.design_name||'';item.color=res.data.sample.color||'';item.size=res.data.sample.size||'';item.in_catalog=true;}
+    else{item.design_name='Not in catalog';item.in_catalog=false;}
+    item.loading=false; renderInvQueue();
+  }).catch(function(){var item=invQueue[idx];if(item){item.design_name='Lookup failed';item.loading=false;}renderInvQueue();});
+}
+
+function renderInvQueue() {
+  var count=invQueue.length;
+  var badge=document.getElementById('inv-queue-badge');if(badge)badge.textContent=count+' item'+(count!==1?'s':'');
+  var tbody=document.getElementById('inv-queue-tbody');if(!tbody)return;
+  tbody.innerHTML=invQueue.map(function(item,i) {
+    var totalSame=0,sameCount=0;
+    invQueue.forEach(function(x){if(x.barcode===item.barcode)totalSame++;});
+    for(var k=0;k<=i;k++){if(invQueue[k].barcode===item.barcode)sameCount++;}
+    var qtyLabel=totalSame>1?' <span style="background:#e8f0fb;color:#2c5282;font-size:10px;font-weight:700;padding:1px 5px;border-radius:3px">copy '+sameCount+' of '+totalSame+'</span>':'';
+    var dc=item.loading?'':([(item.design_name||'').toUpperCase(),(item.color||'').toUpperCase()].filter(function(v){return v&&v!=='NOT IN CATALOG'&&v!=='LOOKUP FAILED'&&v!=='LOOKING UP...';}).join(' | ')||'--');
+    return '<tr'+(item.loading?' style="background:#fafaf8"':'')+'><td><span class="mono">'+item.barcode+'</span>'+qtyLabel+'</td><td>'+(item.loading?'<span style="color:#b0ada6;font-style:italic;font-size:12px">Looking up...</span>':'<span style="font-weight:600">'+dc+'</span>')+'</td><td style="color:#7a7670;font-size:12px">'+(item.loading?'':item.size||'--')+'</td><td>'+(item.loading?'<span style="color:#b0ada6;font-size:11px">...</span>':item.in_catalog?'<span class="badge badge-in">In catalog</span>':'<span class="badge badge-out">Not in catalog</span>')+'</td><td><button onclick="invRemoveFromQueue('+i+')" style="background:none;border:none;cursor:pointer;color:#b0ada6;font-size:16px">x</button></td></tr>';
+  }).join('');
+}
+
+function invRemoveFromQueue(idx){invQueue.splice(idx,1);renderInvQueue();if(invQueue.length===0){var c=document.getElementById('inv-queue-card');if(c)c.style.display='none';}}
+function invClearQueue(){invQueue=[];renderInvQueue();var c=document.getElementById('inv-queue-card');if(c)c.style.display='none';}
+
+function invBulkConfirm() {
+  if(invQueue.length===0){showToast('No items in queue','error');return;}
+  var barcodes=invQueue.map(function(i){return i.barcode;});
+  var btn=document.getElementById('inv-confirm-btn');if(btn){btn.textContent='Adding...';btn.disabled=true;}
+  showToast('Adding '+barcodes.length+' item'+(barcodes.length!==1?'s':'')+' to inventory...','');
+  api('scanIntoInventory',{barcodes:barcodes,location_name:'Chicago Showroom',scanned_by:currentUser.name})
+    .then(function(res) {
+      if(btn){btn.textContent='Add All to Inventory';btn.disabled=false;}
+      if(res.success){var d=res.data;showToast(d.succeeded+' of '+d.total+' items added','success');invClearQueue();loadInventory();invSetView('summary');}
+      else showToast('Error: '+(res.error||'Unknown'),'error');
+    }).catch(function(err){if(btn){btn.textContent='Add All to Inventory';btn.disabled=false;}showToast('Error: '+err.message,'error');});
+}
+
+function invMarkMissing(inventoryId,barcode) {
+  if(!confirm('Mark '+barcode+' as missing?'))return;
+  api('markMissing',{inventory_id:inventoryId,notes:'Marked missing via app'}).then(function(res){if(res.success){showToast(barcode+' marked missing','success');loadInventory();}});
+}
+
+function exportInventory() {
+  if(allInventory.length===0){showToast('No inventory to export','error');return;}
+  var headers=['barcode','type_code','design_name','color','size','condition','status','scanned_in_date','scanned_in_by'];
+  var csv=[headers.join(',')].concat(allInventory.map(function(r){return headers.map(function(h){return'"'+String(r[h]||'').replace(/"/g,'""')+'"';}).join(',');})).join('\n');
+  var blob=new Blob([csv],{type:'text/csv'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='STARK_Inventory_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+
+// ── RETIRE FROM INVENTORY ─────────────────────────────────
+function invRetireSearch() {
+  var q=document.getElementById('inv-retire-search')?document.getElementById('inv-retire-search').value.trim():'';
+  if(!q){showToast('Enter a barcode or design name','error');return;}
+  var resultsEl=document.getElementById('inv-retire-results');
+  resultsEl.innerHTML='<div style="color:#7a7670;font-size:13px;padding:6px 0">Searching...</div>';
+  invRetireSelected=null;
+  var btn=document.getElementById('inv-retire-btn');if(btn){btn.disabled=true;btn.style.opacity='.5';}
+  document.getElementById('inv-retire-selected-card').style.display='none';
+  api('getInventory',{search:q}).then(function(res) {
+    if(!res.success){resultsEl.innerHTML='<div style="color:#b03030;font-size:13px">Error: '+res.error+'</div>';return;}
+    var matches=res.data.filter(function(r){return r.status!=='retired';}).slice(0,10);
+    if(matches.length===0){resultsEl.innerHTML='<div style="color:#7a7670;font-size:13px;padding:6px 0">No active inventory items found.</div>';return;}
+    var h='<div style="border:1px solid #e8e4de;border-radius:6px;overflow:hidden;max-height:200px;overflow-y:auto">';
+    matches.forEach(function(r) {
+      var dc=[(r.design_name||'').toUpperCase(),(r.color||'').toUpperCase()].filter(Boolean).join(' | ')||'--';
+      var sb=r.status==='checked_out'?'<span class="badge badge-out" style="float:right">Out</span>':'<span class="badge badge-in" style="float:right">In</span>';
+      h+='<div onclick="invRetireSelectItem(\''+escQ(r.inventory_id)+'\',\''+escQ(dc)+'\',\''+escQ(r.barcode)+'\',\''+escQ(r.size)+'\')" style="padding:9px 12px;border-bottom:1px solid #f0ede8;cursor:pointer;font-size:13px" onmouseover="this.style.background=\'#f5f2ed\'" onmouseout="this.style.background=\'\'"><span style="font-weight:600">'+dc+'</span><span style="color:#7a7670;font-size:11px;margin-left:8px">'+(r.size||'')+'</span>'+sb+'<span style="font-family:monospace;color:#b0ada6;font-size:11px;display:block;margin-top:2px">'+r.barcode+'</span></div>';
+    });
+    h+='</div>'; resultsEl.innerHTML=h;
+  });
+}
+
+function invRetireSelectItem(inventoryId,label,barcode,size) {
+  invRetireSelected={inventory_id:inventoryId,label:label,barcode:barcode,size:size};
+  document.getElementById('inv-retire-selected-name').textContent=label+(size?' -- '+size:'');
+  document.getElementById('inv-retire-selected-barcode').textContent='Barcode: '+barcode;
+  document.getElementById('inv-retire-selected-card').style.display='';
+  document.getElementById('inv-retire-results').innerHTML='';
+  var btn=document.getElementById('inv-retire-btn');if(btn){btn.disabled=false;btn.style.opacity='1';}
+}
+
+function retireSampleFromInventory() {
+  if(!invRetireSelected){showToast('Select an inventory item first','error');return;}
+  var reason=document.getElementById('inv-retire-reason')?document.getElementById('inv-retire-reason').value:'discontinued';
+  var notes=document.getElementById('inv-retire-notes')?document.getElementById('inv-retire-notes').value:'';
+  if(!confirm('Remove "'+invRetireSelected.label+'" from Showroom Inventory?'))return;
+  var btn=document.getElementById('inv-retire-btn');if(btn){btn.textContent='Removing...';btn.disabled=true;}
+  api('retireInventoryItem',{inventory_id:invRetireSelected.inventory_id,reason:reason+(notes?' -- '+notes:'')})
+    .then(function(res) {
+      if(btn){btn.textContent='Remove from Inventory';btn.style.opacity='.5';}
+      if(res.success){showToast('Item removed from inventory','success');invRetireSelected=null;document.getElementById('inv-retire-search').value='';document.getElementById('inv-retire-notes').value='';document.getElementById('inv-retire-selected-card').style.display='none';document.getElementById('inv-retire-results').innerHTML='';if(btn)btn.disabled=true;loadInventory();}
+      else{showToast('Error: '+(res.error||'Unknown'),'error');if(btn){btn.disabled=false;btn.style.opacity='1';}}
+    });
+}
+
+// ── DESIGN SEARCH ─────────────────────────────────────────
+function dsSearch(ctx) {
+  var input=document.getElementById(ctx+'-design-search');
+  var q=input?input.value.trim():'';
+  dsSelected[ctx]=null;
+  var sizeSel=document.getElementById(ctx+'-size-select');
+  if(sizeSel){sizeSel.innerHTML='<option value="">Select design first...</option>';sizeSel.disabled=true;}
+  var addBtn=document.getElementById(ctx+'-ds-add-btn');
+  if(addBtn){addBtn.disabled=true;addBtn.style.opacity='.4';}
+  if(q.length<2){var dd=document.getElementById(ctx+'-design-dropdown');if(dd){dd.innerHTML='';dd.classList.remove('open');}return;}
+  if(dsTimer[ctx])clearTimeout(dsTimer[ctx]);
+  dsTimer[ctx]=setTimeout(function(){
+    api('searchDesigns',{query:q}).then(function(res){if(res.success)dsShowDropdown(ctx,res.data);});
+  },300);
+}
+
+function dsShowDropdown(ctx,results) {
+  var dd=document.getElementById(ctx+'-design-dropdown');if(!dd)return;
+  if(!results||results.length===0){dd.innerHTML='<div class="design-option" style="color:#7a7670;font-style:italic">No matches found</div>';dd.classList.add('open');return;}
+  dd.innerHTML=results.map(function(r){return '<div class="design-option" onclick="dsSelectDesign(\''+ctx+'\',\''+escQ(r.design_name)+'\',\''+escQ(r.color)+'\',\''+escQ(r.label)+'\')"><span class="opt-label">'+r.label.toUpperCase()+'</span><span class="opt-type">'+r.type_code+'</span></div>';}).join('');
+  dd.classList.add('open');
+}
+
+function escQ(s){return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,'\\\'');}
+
+function dsSelectDesign(ctx,designName,color,label) {
+  dsSelected[ctx]={design_name:designName,color:color,label:label};
+  var input=document.getElementById(ctx+'-design-search');if(input)input.value=label.toUpperCase();
+  var dd=document.getElementById(ctx+'-design-dropdown');if(dd){dd.innerHTML='';dd.classList.remove('open');}
+  var sizeSel=document.getElementById(ctx+'-size-select');
+  if(sizeSel){sizeSel.innerHTML='<option value="">Loading sizes...</option>';sizeSel.disabled=true;}
+  api('getSizesForDesign',{design_name:designName,color:color}).then(function(res) {
+    if(!sizeSel)return;
+    if(!res.success||!res.data||res.data.length===0){sizeSel.innerHTML='<option value="">No sizes found</option>';sizeSel.disabled=true;return;}
+    sizeSel.innerHTML='<option value="">Select size...</option>';
+    res.data.forEach(function(s){sizeSel.innerHTML+='<option value="'+s.size+'" data-barcode="'+s.barcode+'">'+s.size+'</option>';});
+    sizeSel.disabled=false;
+  });
+}
+
+function dsOnSizeSelect(ctx) {
+  var sizeSel=document.getElementById(ctx+'-size-select');
+  var addBtn=document.getElementById(ctx+'-ds-add-btn');
+  if(!sizeSel||!addBtn)return;
+  if(sizeSel.value){addBtn.disabled=false;addBtn.style.opacity='1';}
+  else{addBtn.disabled=true;addBtn.style.opacity='.4';}
+}
+
+function dsAddToQueue(ctx) {
+  var sel=dsSelected[ctx];if(!sel){showToast('Select a design first','error');return;}
+  var sizeSel=document.getElementById(ctx+'-size-select');
+  var size=sizeSel?sizeSel.value:'';if(!size){showToast('Select a size first','error');return;}
+  var barcode=sizeSel&&sizeSel.selectedIndex>0?sizeSel.options[sizeSel.selectedIndex].getAttribute('data-barcode'):'';
+  var item={barcode:barcode||('MANUAL-'+Date.now()),design_name:sel.design_name,color:sel.color,size:size,in_catalog:!!barcode,loading:false};
+  if(ctx==='inv'){invQueue.push(item);renderInvQueue();document.getElementById('inv-queue-card').style.display='';}
+  else if(ctx==='co'){scanQueue.push({barcode:item.barcode,sample:{design_name:item.design_name,color:item.color,size:item.size},loading:false});renderQueue();}
+  else if(ctx==='ret'&&barcode){
+    var idx=returnQueue.length;
+    returnQueue.push({barcode:barcode,loan_id:'',account:'Looking up...',am:'',out_date:'',design:sel.design_name,color:sel.color,loading:true});
+    renderReturnQueue();document.getElementById('return-queue-card').style.display='';document.getElementById('return-confirm-card').style.display='';
+    api('getSampleByBarcode',{barcode:barcode}).then(function(res){
+      var rItem=returnQueue[idx];if(!rItem)return;
+      if(!res.success||!res.data||!res.data.active_loan){returnQueue.splice(idx,1);renderReturnQueue();if(returnQueue.length===0){document.getElementById('return-queue-card').style.display='none';document.getElementById('return-confirm-card').style.display='none';}showToast('No active loan for '+barcode,'error');return;}
+      var loan=res.data.active_loan;rItem.loan_id=loan.loan_id;rItem.account=loan.account_name||loan.dest_location_name||'--';rItem.out_date=loan.checked_out_date||'--';rItem.loading=false;renderReturnQueue();
+    });
+  } else if(ctx==='ret'&&!barcode){showToast('No barcode found -- scan the physical barcode instead','error');return;}
+  var input=document.getElementById(ctx+'-design-search');if(input)input.value='';
+  var dd=document.getElementById(ctx+'-design-dropdown');if(dd){dd.innerHTML='';dd.classList.remove('open');}
+  if(sizeSel){sizeSel.innerHTML='<option value="">Select design first...</option>';sizeSel.disabled=true;}
+  var addBtn=document.getElementById(ctx+'-ds-add-btn');if(addBtn){addBtn.disabled=true;addBtn.style.opacity='.4';}
+  dsSelected[ctx]=null;
+}
+
+document.addEventListener('click',function(e){
+  document.querySelectorAll('.design-dropdown').forEach(function(dd){var wrap=dd.parentElement;if(wrap&&!wrap.contains(e.target))dd.classList.remove('open');});
+});
+
+// ── ANALYTICS ─────────────────────────────────────────────
+function loadAnalytics() {
+  var period=document.getElementById('analytics-period')?document.getElementById('analytics-period').value:'30d';
+  api('getAnalytics',{period:period}).then(function(res) {
+    if(!res.success){showToast('Analytics error: '+res.error,'error');return;}
+    var d=res.data;
+    renderBarChart('chart-designs',d.topDesigns,'');
+    renderBarChart('chart-ams',d.amLoans,'green');
+    renderBarChart('chart-accounts',d.topAccounts,'blue');
+    var total=d.rugLoans+d.brdlmLoans;
+    var rp=total>0?Math.round(d.rugLoans/total*100):0;
+    var bp=total>0?Math.round(d.brdlmLoans/total*100):0;
+    document.getElementById('chart-types').innerHTML='<div class="bar-row"><div class="bar-label">RUG</div><div class="bar-track"><div class="bar-fill" style="width:'+rp+'%"></div></div><div class="bar-val">'+d.rugLoans+'</div></div><div class="bar-row"><div class="bar-label">BRDLM</div><div class="bar-track"><div class="bar-fill blue" style="width:'+bp+'%"></div></div><div class="bar-val">'+d.brdlmLoans+'</div></div>';
+  });
+}
+
+function renderBarChart(id,items,cls) {
+  var el=document.getElementById(id);
+  if(!items||items.length===0){el.innerHTML='<div style="padding:14px;color:#7a7670;font-size:13px">No data yet.</div>';return;}
+  var max=0;items.forEach(function(i){if(i.count>max)max=i.count;});
+  el.innerHTML=items.map(function(item){var pct=max>0?Math.round(item.count/max*100):0;return '<div class="bar-row"><div class="bar-label" title="'+item.name+'">'+item.name+'</div><div class="bar-track"><div class="bar-fill '+(cls||'')+'" style="width:'+pct+'%"></div></div><div class="bar-val">'+item.count+'</div></div>';}).join('');
+}
+
+// ── LOCATIONS / USERS ─────────────────────────────────────
+function loadLocations() {
+  api('getLocations').then(function(res) {
+    if(!res.success)return;
+    var tbody=document.getElementById('locations-tbody');
+    if(!res.data||res.data.length===0){tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:#7a7670;padding:18px">No locations yet.</td></tr>';return;}
+    tbody.innerHTML=res.data.map(function(l){return '<tr><td style="font-weight:600">'+l.name+'</td><td>'+(l.city||'--')+'</td><td>'+(l.state||'--')+'</td><td><span class="badge badge-in">Active</span></td></tr>';}).join('');
+  });
+}
+
+function loadUsers() {
+  api('getUsers').then(function(res) {
+    if(!res.success)return;
+    var tbody=document.getElementById('users-tbody');
+    tbody.innerHTML=res.data.map(function(u){return '<tr><td style="font-weight:600">'+u.name+'</td><td style="color:#7a7670">'+u.email+'</td><td><span class="badge '+(u.role==='super_admin'?'badge-admin':'badge-data')+'">'+(u.role==='super_admin'?'Super Admin':'Data Admin')+'</span></td><td style="color:#7a7670">'+(u.last_active?u.last_active.slice(0,10):'Never')+'</td><td><span class="badge badge-in">Active</span></td></tr>';}).join('');
+  });
+}
+
+// ── TOAST ─────────────────────────────────────────────────
+function showToast(msg,type) {
+  var el=document.getElementById('toast');
+  el.textContent=msg;
+  el.className='toast show'+(type?' '+type:'');
+  setTimeout(function(){el.classList.remove('show');},3500);
+}
+
+// ── KEYBOARD ──────────────────────────────────────────────
+document.addEventListener('keydown',function(e) {
+  if(e.key==='Enter') {
+    if(document.activeElement.id==='scan-field')addToQueue();
+    if(document.activeElement.id==='return-field')addToReturnQueue();
+    if(document.activeElement.id==='inv-scan-field')invAddSingle();
+    if(document.activeElement.id==='login-email')doLogin();
+  }
+});
+</script>
+</body>
+</html>
